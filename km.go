@@ -92,7 +92,7 @@ func RemoveOldKernels(removelist []string) {
 		var cmd exec.Cmd
 		for _, k := range removelist {
 			fmt.Println(k, " is removing...")
-			cmd = *exec.Command("sudo", "apt", "remove", "--purge", "-y", k)
+			cmd = *exec.Command("sudo", "apt", "remove", "--purge", "-y", k) //dependency bug
 			bs, err := cmd.Output()
 			we(err)
 			fmt.Println(string(bs))
@@ -100,7 +100,7 @@ func RemoveOldKernels(removelist []string) {
 
 				fmt.Printf("Removed!\n\n")
 				l(k, "Removed")
-				// DisplayMenu()
+				// RemoveKernelMenu()
 			}
 		}
 	}
@@ -114,8 +114,8 @@ func FindBootedKernel() string {
 	return strings.TrimSpace(string(b))
 }
 
-//DisplayMenu menu
-func DisplayMenu() {
+//RemoveKernelMenu menu
+func RemoveKernelMenu() {
 	cls()
 	fmt.Printf("Installed kernels:\n\n")
 	images := GetKernels()
@@ -136,7 +136,7 @@ func DisplayMenu() {
 	var i int
 	_, err := fmt.Scan(&i)
 	if err != nil { // letter 0 fix
-		DisplayMenu()
+		RemoveKernelMenu()
 	}
 	if i == -1 {
 		os.Exit(0)
@@ -156,7 +156,7 @@ func DisplayMenu() {
 		// fmt.Println(removelist)
 		RemoveOldKernels(removelist)
 	} else {
-		DisplayMenu()
+		RemoveKernelMenu()
 	}
 }
 
@@ -205,9 +205,12 @@ func DownloadKernel() {
 		fmt.Printf("[%d] %s \n", index, ver)
 
 	}
-	fmt.Printf("\nChoose index: ")
+	fmt.Printf("\nChoose an index to install or [-1] for exit: ")
 	var i int
 	fmt.Scan(&i)
+	if i == -1 {
+		os.Exit(0)
+	}
 	u := links[i]
 
 	lst := GrabMainLinks(u)
@@ -298,7 +301,23 @@ func install(dest string) {
 
 	}
 }
+func app() {
+	cls()
+	fmt.Printf("simple kernel management tool for ubuntu\n\n")
+	fmt.Printf("[r] Remove old kernel\n[l] install new kernel\n[q] quit\n:? ")
+	var s string
+	fmt.Scan(&s)
+	switch s {
+	case "r":
+		RemoveKernelMenu()
+	case "l":
+		DownloadKernel()
+	case "q":
+		os.Exit(0)
+	default:
+		app()
+	}
+}
 func main() {
-	// DisplayMenu()
-	DownloadKernel()
+	app()
 }
