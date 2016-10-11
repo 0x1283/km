@@ -92,7 +92,7 @@ func RemoveOldKernels(removelist []string) {
 		var cmd exec.Cmd
 		for _, k := range removelist {
 			fmt.Println(k, " is removing...")
-			cmd = *exec.Command("sudo", "apt", "remove", "--purge", "-y", k) //dependency bug
+			cmd = *exec.Command("sudo", "apt", "remove", "--purge", "-y", k) //dependency
 			bs, err := cmd.Output()
 			we(err)
 			fmt.Println(string(bs))
@@ -100,7 +100,6 @@ func RemoveOldKernels(removelist []string) {
 
 				fmt.Printf("Removed!\n\n")
 				l(k, "Removed")
-				// RemoveKernelMenu()
 			}
 		}
 	}
@@ -132,7 +131,7 @@ func RemoveKernelMenu() {
 		}
 
 	}
-	fmt.Printf("\nChoose and index [0-%d] to remove or [-1] for exit: ", len(images)-1)
+	fmt.Printf("\nChoose an index [0-%d] to remove or [-1] for exit: ", len(images)-1)
 	var i int
 	_, err := fmt.Scan(&i)
 	if err != nil { // letter 0 fix
@@ -153,7 +152,6 @@ func RemoveKernelMenu() {
 				removelist = append(removelist, h)
 			}
 		}
-		// fmt.Println(removelist)
 		RemoveOldKernels(removelist)
 	} else {
 		RemoveKernelMenu()
@@ -199,7 +197,9 @@ func DownloadKernel() {
 	var downloadlist []string
 	links := GrabMainLinks("")
 	cls()
-
+	if len(links) < 1 {
+		os.Exit(1)
+	}
 	for index, k := range links {
 		ver := strings.Replace(strings.Replace(k, mainline, "", 1), "/", "", 1)
 		fmt.Printf("[%d] %s \n", index, ver)
@@ -207,14 +207,19 @@ func DownloadKernel() {
 	}
 	fmt.Printf("\nChoose an index to install or [-1] for exit: ")
 	var i int
-	fmt.Scan(&i)
+	_, err := fmt.Scan(&i)
+	if err != nil {
+		DownloadKernel()
+	}
 	if i == -1 {
 		os.Exit(0)
 	}
 	u := links[i]
 
 	lst := GrabMainLinks(u)
-
+	if len(lst) < 1 {
+		os.Exit(1)
+	}
 	m := map[string]bool{}
 	uniq := []string{}
 	for _, l := range lst {
@@ -229,7 +234,7 @@ func DownloadKernel() {
 		}
 	}
 	pth := downloadPath + fmt.Sprintf("%d", time.Now().Unix())
-	err := os.Mkdir(pth, 0777)
+	err = os.Mkdir(pth, 0755)
 	pe(err)
 
 	//rm dup
@@ -237,9 +242,6 @@ func DownloadKernel() {
 		if m[downloadlist[v]] != true {
 			m[downloadlist[v]] = true
 			uniq = append(uniq, downloadlist[v])
-			// fmt.Println(downloadlist[v])
-			// f := strings.Replace(downloadlist[v], mainline, "", 1)
-			// Download(downloadlist[v], pth+"/"+f)
 		}
 	}
 
@@ -278,6 +280,7 @@ func Download(u, dest string, wg *sync.WaitGroup) {
 
 }
 
+//install downloaded deb files
 func install(dest string) {
 	files, err := ioutil.ReadDir(dest)
 	if err != nil {
@@ -287,7 +290,7 @@ func install(dest string) {
 
 	for _, v := range files {
 		fname := v.Name()
-		cmd := exec.Command("/usr/bin/sudo", "dpkg", "-i", fname) //dependency bug when installing header will be fixed
+		cmd := exec.Command("/usr/bin/sudo", "dpkg", "-i", fname) //dependency exit status 1
 		cmd.Dir = dest
 		by, err := cmd.CombinedOutput()
 		if err != nil {
@@ -301,16 +304,18 @@ func install(dest string) {
 
 	}
 }
+
+//basic ui
 func app() {
 	cls()
 	fmt.Printf("simple kernel management tool for ubuntu\n\n")
-	fmt.Printf("[r] Remove old kernel\n[l] install new kernel\n[q] quit\n:? ")
+	fmt.Printf("[r] Remove old kernel\n[i] Install new kernel v4+\n[q] quit\n:? ")
 	var s string
 	fmt.Scan(&s)
 	switch s {
 	case "r":
 		RemoveKernelMenu()
-	case "l":
+	case "i":
 		DownloadKernel()
 	case "q":
 		os.Exit(0)
