@@ -194,6 +194,8 @@ func GrabMainLinks(u string) (links []string) {
 
 //DownloadKernel downlods deb files
 func DownloadKernel() {
+
+	var wg sync.WaitGroup
 	var downloadlist []string
 	links := GrabMainLinks("")
 	cls()
@@ -245,14 +247,13 @@ func DownloadKernel() {
 		}
 	}
 
-	var wg sync.WaitGroup
-
 	for _, l := range uniq {
 		wg.Add(1)
 		f := strings.Split(strings.Replace(l, mainline, "", 1), "/")[1]
 		go Download(l, pth+"/"+f, &wg)
 
 	}
+	fmt.Printf("files downloading...\n")
 	wg.Wait()
 
 	install(pth)
@@ -263,7 +264,7 @@ func DownloadKernel() {
 func Download(u, dest string, wg *sync.WaitGroup) {
 	out, err := os.Create(dest)
 	pe(err)
-	fmt.Printf("file is downloading...\n")
+	fname := strings.Split(strings.Replace(u, mainline, "", -1), "/")[1]
 
 	defer out.Close()
 
@@ -274,7 +275,7 @@ func Download(u, dest string, wg *sync.WaitGroup) {
 	bs, err := io.Copy(out, response.Body)
 	we(err)
 
-	fmt.Println(bs, "file downloaded.")
+	fmt.Println(fname, bs, "bytes downloaded.")
 	l(u, "Downloaded", dest)
 	defer wg.Done()
 
