@@ -78,7 +78,7 @@ func GetHeaders() (headers []string) {
 	pe(err)
 	lst := strings.Fields(out.String())
 	for _, k := range lst {
-		if strings.Index(k, "linux-headers-") > -1 {
+		if strings.Index(k, "linux-headers-") > -1 && !strings.Contains(k, "generic") {
 			headers = append(headers, k)
 		}
 	}
@@ -92,7 +92,7 @@ func RemoveOldKernels(removelist []string) {
 		var cmd exec.Cmd
 		for _, k := range removelist {
 			fmt.Println(k, " is removing...")
-			cmd = *exec.Command("sudo", "apt", "remove", "--purge", "-y", k) //dependency
+			cmd = *exec.Command("sudo", "apt", "remove", "--purge", "-y", k)
 			bs, err := cmd.Output()
 			we(err)
 			fmt.Println(string(bs))
