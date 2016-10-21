@@ -291,7 +291,10 @@ func install(dest string) {
 
 	for _, v := range files {
 		fname := v.Name()
-		cmd := exec.Command("/usr/bin/sudo", "dpkg", "-i", fname) //dependency exit status 1
+		if strings.Contains(fname, "headers") && strings.Contains(fname, "generic") {
+			continue
+		}
+		cmd := exec.Command("/usr/bin/sudo", "dpkg", "-i", fname)
 		cmd.Dir = dest
 		by, err := cmd.CombinedOutput()
 		if err != nil {
