@@ -285,16 +285,22 @@ func Download(u, dest string, wg *sync.WaitGroup) {
 func install(dest string) {
 	files, err := ioutil.ReadDir(dest)
 	if err != nil {
-		fmt.Println(err)
-		return
+		pe(err)
 	}
-
+	var sfiles []string
+	var hgeneric string
 	for _, v := range files {
 		fname := v.Name()
 		if strings.Contains(fname, "headers") && strings.Contains(fname, "generic") {
+			hgeneric = fname
 			continue
 		}
-		cmd := exec.Command("/usr/bin/sudo", "dpkg", "-i", fname)
+		sfiles = append(sfiles, fname)
+	}
+	sfiles = append(sfiles, hgeneric)
+
+	for _, f := range sfiles {
+		cmd := exec.Command("/usr/bin/sudo", "dpkg", "-i", f)
 		cmd.Dir = dest
 		by, err := cmd.CombinedOutput()
 		if err != nil {
@@ -303,9 +309,8 @@ func install(dest string) {
 
 		if cmd.ProcessState.Success() {
 			fmt.Println(string(by))
-			l("installed", v.Name())
+			l("installed", f)
 		}
-
 	}
 }
 
