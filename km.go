@@ -93,15 +93,15 @@ func RemoveOldKernels(removelist []string) {
 		for _, k := range removelist {
 			fmt.Println(k, " is removing...")
 			cmd = *exec.Command("sudo", "apt", "remove", "--purge", "-y", k)
-			bs, err := cmd.Output()
+			_, err := cmd.Output()
 			we(err)
-			fmt.Println(string(bs))
 			if cmd.ProcessState.Success() {
 
-				fmt.Printf("Removed!\n\n")
+				fmt.Printf("%s Removed!\n\n", k)
 				l(k, "Removed")
 			}
 		}
+		RemoveKernelMenu()
 	}
 }
 
@@ -253,7 +253,7 @@ func DownloadKernel() {
 		go Download(l, pth+"/"+f, &wg)
 
 	}
-	fmt.Printf("files downloading...\n")
+	fmt.Printf("\nfiles downloading...\n")
 	wg.Wait()
 
 	install(pth)
@@ -284,9 +284,8 @@ func Download(u, dest string, wg *sync.WaitGroup) {
 //install downloaded deb files
 func install(dest string) {
 	files, err := ioutil.ReadDir(dest)
-	if err != nil {
-		pe(err)
-	}
+	pe(err)
+
 	var sfiles []string
 	var hgeneric string
 	for _, v := range files {
@@ -298,17 +297,15 @@ func install(dest string) {
 		sfiles = append(sfiles, fname)
 	}
 	sfiles = append(sfiles, hgeneric)
-
+	fmt.Printf("\nwait...\n\n")
 	for _, f := range sfiles {
 		cmd := exec.Command("/usr/bin/sudo", "dpkg", "-i", f)
 		cmd.Dir = dest
-		by, err := cmd.CombinedOutput()
-		if err != nil {
-			fmt.Println(err)
-		}
+		_, err := cmd.Output()
+		we(err)
 
 		if cmd.ProcessState.Success() {
-			fmt.Println(string(by))
+			fmt.Printf("%s installed.\n", f)
 			l("installed", f)
 		}
 	}
