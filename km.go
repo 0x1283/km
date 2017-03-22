@@ -47,7 +47,7 @@ func l(v ...interface{}) {
 
 //cls clear screen
 func cls() {
-	cmd := exec.Command("clear")
+	cmd := exec.Command("/usr/bin/clear")
 	b, err := cmd.CombinedOutput()
 	pe(err)
 	fmt.Print(string(b))
@@ -66,7 +66,7 @@ func GetKernels() (kernels []string) {
 			kernels = append(kernels, k)
 		}
 	}
-	return kernels
+	return
 }
 
 //GetHeaders returns list of header files
@@ -82,7 +82,12 @@ func GetHeaders() (headers []string) {
 			headers = append(headers, k)
 		}
 	}
-	return headers
+	return
+}
+
+//ImagesAndHeaders return images and headers
+func ImagesAndHeaders() (img, hdrs []string) {
+	return GetKernels(), GetHeaders()
 }
 
 //RemoveOldKernels removes old kernels
@@ -113,12 +118,34 @@ func FindBootedKernel() string {
 	return strings.TrimSpace(string(b))
 }
 
+//BasicMenu ...
+func BasicMenu() {
+	cls()
+	fmt.Printf("simple kernel management tool for ubuntu\n\n")
+	fmt.Println("Installed:")
+	fmt.Printf("----------------------------\n")
+	images, _ := ImagesAndHeaders()
+	bk := FindBootedKernel()
+	for _, im := range images {
+		if strings.Index(im, bk) > -1 {
+			fmt.Printf("+ %s *\n", strings.Replace(im, "vmlinuz-", "", 1))
+
+		} else {
+			fmt.Printf("+ %s\n", strings.Replace(im, "vmlinuz-", "", 1))
+
+		}
+
+	}
+	fmt.Printf("----------------------------\n\n[r] Remove old kernel\n[i] Install new kernel v4+\n[q] quit\n:? ")
+
+}
+
 //RemoveKernelMenu menu
 func RemoveKernelMenu() {
 	cls()
 	fmt.Printf("Installed kernels:\n\n")
-	images := GetKernels()
-	headers := GetHeaders()
+	images, headers := ImagesAndHeaders()
+
 	var removelist []string
 	bk := FindBootedKernel()
 	for index, im := range images {
@@ -131,14 +158,15 @@ func RemoveKernelMenu() {
 		}
 
 	}
-	fmt.Printf("\nChoose an index [0-%d] to remove or [-1] for exit: ", len(images)-1)
+	fmt.Printf("\nChoose an index [0-%d] to remove or [-1] for menu: ", len(images)-1)
 	var i int
 	_, err := fmt.Scan(&i)
 	if err != nil { // letter 0 fix
 		RemoveKernelMenu()
 	}
 	if i == -1 {
-		os.Exit(0)
+		BasicMenu()
+		return
 	}
 	if i <= len(images) && i >= 0 {
 
@@ -164,8 +192,8 @@ func GrabMainLinks(u string) (links []string) {
 		u = mainline
 	}
 	resp, err := http.Get(u)
-	defer resp.Body.Close()
 	pe(err)
+	defer resp.Body.Close()
 
 	tk := html.NewTokenizer(resp.Body)
 
@@ -207,14 +235,15 @@ func DownloadKernel() {
 		fmt.Printf("[%d] %s \n", index, ver)
 
 	}
-	fmt.Printf("\nChoose an index to install or [-1] for exit: ")
+	fmt.Printf("\nChoose an index to install or [-1] for menu: ")
 	var i int
 	_, err := fmt.Scan(&i)
 	if err != nil {
 		DownloadKernel()
 	}
 	if i == -1 {
-		os.Exit(0)
+		BasicMenu()
+		return
 	}
 	u := links[i]
 
@@ -313,20 +342,20 @@ func install(dest string) {
 
 //basic ui
 func app() {
-	cls()
-	fmt.Printf("simple kernel management tool for ubuntu\n\n")
-	fmt.Printf("[r] Remove old kernel\n[i] Install new kernel v4+\n[q] quit\n:? ")
-	var s string
-	fmt.Scan(&s)
-	switch s {
-	case "r":
-		RemoveKernelMenu()
-	case "i":
-		DownloadKernel()
-	case "q":
-		os.Exit(0)
-	default:
-		app()
+	BasicMenu()
+	for {
+		var s string
+		fmt.Scan(&s)
+		switch s {
+		case "r":
+			RemoveKernelMenu()
+		case "i":
+			DownloadKernel()
+		case "q":
+			os.Exit(0)
+		default:
+			app()
+		}
 	}
 }
 func main() {
