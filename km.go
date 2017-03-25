@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -121,8 +122,8 @@ func FindBootedKernel() string {
 //BasicMenu ...
 func BasicMenu() {
 	cls()
-	fmt.Printf("simple kernel management tool for ubuntu\n\n")
-	fmt.Println("Installed:")
+	fmt.Printf("simple Kernel Management tool for ubuntu\n\n")
+	fmt.Println("Kernels:")
 	fmt.Printf("----------------------------\n")
 
 	images, _ := ImagesAndHeaders()
@@ -162,9 +163,15 @@ func RemoveKernelMenu() {
 
 	fmt.Printf("\nChoose an index [0-%d] to remove or [-1] for menu: ", len(images)-1)
 
-	var i int
-	_, err := fmt.Scan(&i)
+	var in string
+	_, err := fmt.Scan(&in)
 
+	if err != nil {
+		RemoveKernelMenu()
+		return
+	}
+
+	i, err := strconv.Atoi(in)
 	if err != nil {
 		RemoveKernelMenu()
 		return
@@ -187,8 +194,7 @@ func RemoveKernelMenu() {
 		}
 		RemoveOldKernels(removelist)
 	} else {
-		// RemoveKernelMenu()
-		BasicMenu()
+		RemoveKernelMenu()
 	}
 }
 
@@ -246,14 +252,22 @@ choose:
 
 	fmt.Printf("\nChoose an index to install or [-1] for menu: ")
 
-	var i int
-	_, err := fmt.Scan(&i)
+	var in string
+	_, err := fmt.Scan(&in)
+	if err != nil {
+		goto choose
+	}
+
+	i, err := strconv.Atoi(in)
 	if err != nil {
 		goto choose
 	}
 	if i == -1 {
 		BasicMenu()
 		return
+	}
+	if i > len(links)-1 {
+		goto choose
 	}
 	u := links[i]
 
