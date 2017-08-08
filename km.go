@@ -21,6 +21,7 @@ import (
 const (
 	mainline     = "http://kernel.ubuntu.com/~kernel-ppa/mainline/"
 	downloadPath = "/tmp/kernelz"
+	logfile      = "/km-tmp.log"
 )
 
 //write err
@@ -39,7 +40,8 @@ func pe(err error) {
 
 //logs
 func l(v ...interface{}) {
-	f, err := os.OpenFile("tmp.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	h := os.Getenv("HOME")
+	f, err := os.OpenFile(h+logfile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 	pe(err)
 	defer f.Close()
 	log.SetOutput(f)
@@ -359,7 +361,7 @@ func install(dest string) {
 
 		if cmd.ProcessState.Success() {
 			fmt.Printf("%s installed.\n", f)
-			l("installed", f)
+			l(f, "installed")
 		}
 	}
 	BasicMenu()
